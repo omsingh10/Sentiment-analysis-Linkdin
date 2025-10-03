@@ -17,6 +17,8 @@ Start afterward the backend server using `mvn spring-boot:run` and the frontend 
  try { $response = Invoke-RestMethod -Uri "http://localhost:3001/api/dashboard/analytics" -Method Get; "API working! Total posts: $($response.analytics.totalPosts), Positive: $($response.analytics.sentimentDistribution.positive)" } catch { "API Error:
  $($_.Exception.Message)" }
                                                                                                
+
+
  
        node mock-backend.js
 
