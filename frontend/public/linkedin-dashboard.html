@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Sentiment Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f2f1;
+            color: #323130;
+        }
+
+        /* Navigation */
+        .nav {
+            background-color: #0078d4;
+            color: #ffffff;
+            padding: 12px 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-icon {
+            width: 32px;
+            height: 32px;
+            background-color: #ffffff;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0078d4;
+        }
+
+        .nav-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .nav-subtitle {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .nav-status {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .last-updated {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Main Content */
+        .container {
+            padding: 24px;
+        }
+
+        .header {
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #323130;
+            margin: 0 0 8px 0;
+        }
+
+        .header p {
+            color: #605e5c;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        /* Overview Cards */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .overview-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #edebe9;
+            text-align: center;
+        }
+
+        .overview-card h3 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            color: #323130;
+        }
+
+        .overview-card p {
+            color: #605e5c;
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .positive { color: #107c10; }
+        .negative { color: #d13438; }
+        .neutral { color: #8a8100; }
+
+        /* Posts Section */
+        .posts-section {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #edebe9;
+        }
+
+        .posts-section h3 {
+            margin-bottom: 24px;
+            color: #323130;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .posts-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .post-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #edebe9;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .post-author .author-name {
+            font-weight: 600;
+            color: #323130;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .post-author .author-position {
+            color: #605e5c;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .post-author .author-company {
+            color: #0078d4;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .post-author .author-meta {
+            color: #8a8886;
+            font-size: 12px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .post-date {
+            color: #8a8886;
+            font-size: 12px;
+        }
+
+        .sentiment-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .sentiment-badge.positive {
+            background-color: #dff6dd;
+            color: #107c10;
+            border: 1px solid #b4db4d;
+        }
+
+        .sentiment-badge.negative {
+            background-color: #fde7e9;
+            color: #d13438;
+            border: 1px solid #f1707b;
+        }
+
+        .sentiment-badge.neutral {
+            background-color: #fff4ce;
+            color: #8a8100;
+            border: 1px solid #ffb900;
+        }
+
+        .post-content {
+            margin: 16px 0;
+            line-height: 1.6;
+            color: #323130;
+            font-size: 15px;
+        }
+
+        .post-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid #f3f2f1;
+        }
+
+        .engagement-stats {
+            display: flex;
+            gap: 20px;
+            color: #8a8886;
+            font-size: 14px;
+        }
+
+        .sentiment-score {
+            font-size: 12px;
+            color: #8a8886;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #edebe9;
+            border-top: 4px solid #0078d4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Charts Section */
+        .charts-section {
+            margin: 32px 0;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #edebe9;
+        }
+
+        .chart-card h3 {
+            margin: 0 0 20px 0;
+            color: #323130;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Animated Numbers */
+        .animated-number {
+            transition: all 0.5s ease-in-out;
+        }
+
+        .animated-number.updating {
+            transform: scale(1.1);
+            color: #0078d4;
+        }
+
+        /* Pulse animation for live updates */
+        @keyframes pulse-green {
+            0% { background-color: rgba(16, 124, 16, 0.1); }
+            50% { background-color: rgba(16, 124, 16, 0.3); }
+            100% { background-color: rgba(16, 124, 16, 0.1); }
+        }
+
+        @keyframes pulse-red {
+            0% { background-color: rgba(209, 52, 56, 0.1); }
+            50% { background-color: rgba(209, 52, 56, 0.3); }
+            100% { background-color: rgba(209, 52, 56, 0.1); }
+        }
+
+        @keyframes pulse-orange {
+            0% { background-color: rgba(138, 129, 0, 0.1); }
+            50% { background-color: rgba(138, 129, 0, 0.3); }
+            100% { background-color: rgba(138, 129, 0, 0.1); }
+        }
+
+        .overview-card.pulse-positive {
+            animation: pulse-green 2s ease-in-out;
+        }
+
+        .overview-card.pulse-negative {
+            animation: pulse-red 2s ease-in-out;
+        }
+
+        .overview-card.pulse-neutral {
+            animation: pulse-orange 2s ease-in-out;
+        }
+
+        /* Responsive design for charts */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-brand">
+            <div class="nav-icon">💼</div>
+            <div>
+                <h1 class="nav-title">LinkedIn Sentiment Analytics</h1>
+                <p class="nav-subtitle">Professional Social Media Intelligence Dashboard</p>
+            </div>
+        </div>
+        <div class="nav-status">
+            <div class="status-badge">🟢 Live Data</div>
+            <div class="last-updated" id="lastUpdated">Last updated: --:--:--</div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>LinkedIn Sentiment Analytics</h1>
+            <p>Real-time insights from professional posts</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading LinkedIn Analytics Dashboard...</p>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <h3 id="totalPosts" class="animated-number">--</h3>
+                    <p>Total Posts</p>
+                </div>
+                <div class="overview-card">
+                    <h3 id="positivePosts" class="positive animated-number">--</h3>
+                    <p>Positive Posts</p>
+                </div>
+                <div class="overview-card">
+                    <h3 id="negativePosts" class="negative animated-number">--</h3>
+                    <p>Negative Posts</p>
+                </div>
+                <div class="overview-card">
+                    <h3 id="neutralPosts" class="neutral animated-number">--</h3>
+                    <p>Neutral Posts</p>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Sentiment Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Top Companies</h3>
+                        <div class="chart-container">
+                            <canvas id="companiesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Top Locations</h3>
+                        <div class="chart-container">
+                            <canvas id="locationsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Activity Timeline</h3>
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="posts-section">
+                <h3 id="postsTitle">Recent LinkedIn Posts</h3>
+                <div class="posts-list" id="postsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for charts
+        let sentimentChart, companiesChart, locationsChart, timelineChart;
+        let previousData = null;
+
+        // Update time
+        function updateTime() {
+            document.getElementById('lastUpdated').textContent = 
+                'Last updated: ' + new Date().toLocaleTimeString();
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Format numbers with animation
+        function animateNumber(element, newValue, duration = 1000) {
+            const startValue = parseInt(element.textContent.replace(/,/g, '')) || 0;
+            const startTime = performance.now();
+            
+            element.classList.add('updating');
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function for smooth animation
+                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                const currentValue = Math.round(startValue + (newValue - startValue) * easeOutQuart);
+                
+                element.textContent = currentValue.toLocaleString();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    element.classList.remove('updating');
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        // Format numbers
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        // Get sentiment icon
+        function getSentimentIcon(sentiment) {
+            switch (sentiment.type) {
+                case 'positive': return '😊';
+                case 'negative': return '😟';
+                default: return '😐';
+            }
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Sentiment Distribution Pie Chart
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            sentimentChart = new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Negative', 'Neutral'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#107c10', '#d13438', '#8a8100'],
+                        borderWidth: 0,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true }
+                        }
+                    },
+                    animation: { animateRotate: true, duration: 1500 }
+                }
+            });
+
+            // Top Companies Bar Chart
+            const companiesCtx = document.getElementById('companiesChart').getContext('2d');
+            companiesChart = new Chart(companiesCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Posts',
+                        data: [],
+                        backgroundColor: '#0078d4',
+                        borderRadius: 4,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f3f2f1' } },
+                        x: { grid: { display: false } }
+                    },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                }
+            });
+
+            // Top Locations Bar Chart
+            const locationsCtx = document.getElementById('locationsChart').getContext('2d');
+            locationsChart = new Chart(locationsCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Posts',
+                        data: [],
+                        backgroundColor: '#107c10',
+                        borderRadius: 4,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f3f2f1' } },
+                        x: { grid: { display: false } }
+                    },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                }
+            });
+
+            // Activity Timeline Line Chart
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            timelineChart = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Posts',
+                        data: [],
+                        borderColor: '#8a8100',
+                        backgroundColor: 'rgba(138, 129, 0, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f3f2f1' } },
+                        x: { grid: { display: false } }
+                    },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        // Update charts with new data
+        function updateCharts(data) {
+            // Update sentiment chart
+            sentimentChart.data.datasets[0].data = [
+                data.analytics.sentimentDistribution.positive,
+                data.analytics.sentimentDistribution.negative,
+                data.analytics.sentimentDistribution.neutral
+            ];
+            sentimentChart.update('active');
+
+            // Update companies chart
+            const topCompanies = data.analytics.topCompanies.slice(0, 8);
+            companiesChart.data.labels = topCompanies.map(c => c.company);
+            companiesChart.data.datasets[0].data = topCompanies.map(c => c.count);
+            companiesChart.update('active');
+
+            // Update locations chart
+            const topLocations = data.analytics.topLocations.slice(0, 8);
+            locationsChart.data.labels = topLocations.map(l => l.location.split(',')[0]); // Short names
+            locationsChart.data.datasets[0].data = topLocations.map(l => l.count);
+            locationsChart.update('active');
+
+            // Update timeline chart - group posts by month
+            const monthlyData = {};
+            data.analytics.posts.forEach(post => {
+                const date = new Date(post.createdAt);
+                const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort().slice(-12); // Last 12 months
+            timelineChart.data.labels = sortedMonths.map(month => {
+                const [year, monthNum] = month.split('-');
+                const date = new Date(year, monthNum - 1);
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            });
+            timelineChart.data.datasets[0].data = sortedMonths.map(month => monthlyData[month]);
+            timelineChart.update('active');
+        }
+
+        // Add pulse animation to cards when data changes
+        function addPulseAnimation(cardId, type) {
+            const card = document.getElementById(cardId).parentElement;
+            card.classList.remove('pulse-positive', 'pulse-negative', 'pulse-neutral');
+            setTimeout(() => {
+                card.classList.add(`pulse-${type}`);
+                setTimeout(() => {
+                    card.classList.remove(`pulse-${type}`);
+                }, 2000);
+            }, 100);
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                const response = await fetch('http://localhost:3001/api/dashboard/analytics');
+                const data = await response.json();
+                
+                // Check if this is initial load or update
+                const isInitialLoad = previousData === null;
+                
+                if (isInitialLoad) {
+                    // Initial load - set values directly
+                    document.getElementById('totalPosts').textContent = data.analytics.totalPosts.toLocaleString();
+                    document.getElementById('positivePosts').textContent = data.analytics.sentimentDistribution.positive.toLocaleString();
+                    document.getElementById('negativePosts').textContent = data.analytics.sentimentDistribution.negative.toLocaleString();
+                    document.getElementById('neutralPosts').textContent = data.analytics.sentimentDistribution.neutral.toLocaleString();
+                    
+                    // Initialize charts
+                    initializeCharts();
+                    updateCharts(data);
+                } else {
+                    // Update with animations
+                    if (previousData.analytics.totalPosts !== data.analytics.totalPosts) {
+                        animateNumber(document.getElementById('totalPosts'), data.analytics.totalPosts);
+                    }
+                    if (previousData.analytics.sentimentDistribution.positive !== data.analytics.sentimentDistribution.positive) {
+                        animateNumber(document.getElementById('positivePosts'), data.analytics.sentimentDistribution.positive);
+                        addPulseAnimation('positivePosts', 'positive');
+                    }
+                    if (previousData.analytics.sentimentDistribution.negative !== data.analytics.sentimentDistribution.negative) {
+                        animateNumber(document.getElementById('negativePosts'), data.analytics.sentimentDistribution.negative);
+                        addPulseAnimation('negativePosts', 'negative');
+                    }
+                    if (previousData.analytics.sentimentDistribution.neutral !== data.analytics.sentimentDistribution.neutral) {
+                        animateNumber(document.getElementById('neutralPosts'), data.analytics.sentimentDistribution.neutral);
+                        addPulseAnimation('neutralPosts', 'neutral');
+                    }
+                    
+                    updateCharts(data);
+                }
+
+                // Update posts list
+                const postsList = document.getElementById('postsList');
+                const postsTitle = document.getElementById('postsTitle');
+                postsTitle.textContent = `Recent LinkedIn Posts (${data.analytics.posts.length})`;
+                
+                postsList.innerHTML = '';
+                data.analytics.posts.slice(0, 10).forEach(post => {
+                    const postDiv = document.createElement('div');
+                    postDiv.className = 'post-card';
+                    postDiv.innerHTML = `
+                        <div class="post-header">
+                            <div class="post-author">
+                                <div class="author-name">${post.authorName}</div>
+                                <div class="author-position">${post.authorPosition}</div>
+                                <div class="author-company">${post.authorCompany}</div>
+                                <div class="author-meta">
+                                    <span>📍 ${post.authorLocation}</span>
+                                    <span>•</span>
+                                    <span>${post.year}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="post-date">${new Date(post.createdAt).toLocaleDateString()}</div>
+                                <div class="sentiment-badge ${post.sentiment.type}">
+                                    ${getSentimentIcon(post.sentiment)} ${post.sentiment.type}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-content">${post.content}</div>
+                        <div class="post-stats">
+                            <div class="engagement-stats">
+                                <span>👍 ${formatNumber(post.likes)} likes</span>
+                                <span>💬 ${formatNumber(post.comments)} comments</span>
+                                <span>🔄 ${formatNumber(post.shares)} shares</span>
+                                <span>👁️ ${formatNumber(post.views)} views</span>
+                            </div>
+                            <div class="sentiment-score">
+                                Score: ${post.sentiment.score.toFixed(2)}
+                            </div>
+                        </div>
+                    `;
+                    postsList.appendChild(postDiv);
+                });
+
+                // Store current data for comparison
+                previousData = JSON.parse(JSON.stringify(data));
+
+                // Show dashboard
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<p style="color: #d13438;">Failed to load dashboard data. Please ensure the backend server is running.</p>';
+            }
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+
+        // Auto-refresh every 8 seconds to make it dynamic
+        setInterval(loadDashboard, 8000);
+    </script>
+</body>
+</html>

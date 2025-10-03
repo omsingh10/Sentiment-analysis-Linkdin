@@ -1,5 +1,5 @@
 twitter:
-  consumer-key: xxxx
-  consumer-secret: xxxx
-  access-token: xxxx
-  access-token-secret: xxxx
+  consumer-key: YOUR_TWITTER_CONSUMER_KEY_HERE
+  consumer-secret: YOUR_TWITTER_CONSUMER_SECRET_HERE
+  access-token: YOUR_TWITTER_ACCESS_TOKEN_HERE
+  access-token-secret: YOUR_TWITTER_ACCESS_TOKEN_SECRET_HERE

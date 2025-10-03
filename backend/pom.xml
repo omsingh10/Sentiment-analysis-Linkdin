@@ -17,7 +17,7 @@
     <properties>
         <java.version>1.8</java.version>
         <stanford.corenlp.version>3.9.2</stanford.corenlp.version>
-        <twitter4j.version>[4.0,)</twitter4j.version>
+        <twitter4j.version>4.0.7</twitter4j.version>
     </properties>
 
     <dependencies>
