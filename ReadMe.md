@@ -23,4 +23,6 @@ Start afterward the backend server using `mvn spring-boot:run` and the frontend 
        node mock-backend.js
 
 
-       Start-Process "http://localhost:8080/linkedin-dashboard.html"
+       
+
+       npx http-server -p 8080
